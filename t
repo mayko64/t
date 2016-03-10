@@ -54,7 +54,9 @@ function command_status() {
         git rev-parse 2>/dev/null
 
         if [ $? == 0 ] ; then
-            branch=$(git status | awk '/On branch/ {print $NF}')
+            branch=$(git status | awk '/On branch/ {
+                print gensub(/-([0-9]{6})-/, "-\033[1;32m\\1\033[0m-", "g", $NF)
+            }')
             branch_info=$(git status | awk '/Your branch/ {print $0}')
             echo -e "${HL}${service}${NC}"
             echo -e "    $branch"
