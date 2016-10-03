@@ -35,7 +35,7 @@ function command_branches() {
               parent = $4
             }
             else {
-              branch = gensub(/-([0-9]{6})-/, "-\033[1;34m\\1\033[0m-", "g", $1)
+              branch = gensub(/-([0-9]{6}|PSPD\-[0-9]+)-/, "-\033[1;34m\\1\033[0m-", "g", $1)
               parent = $3
             }
 
@@ -55,7 +55,7 @@ function command_status() {
 
         if [ $? == 0 ] ; then
             branch=$(git status | awk '/On branch/ {
-                print gensub(/-([0-9]{6})-/, "-\033[1;32m\\1\033[0m-", "g", $NF)
+                print gensub(/-([0-9]{6}|PSPD\-[0-9]+)-/, "-\033[1;32m\\1\033[0m-", "g", $NF)
             }')
             branch_info=$(git status | awk '/Your branch/ {print $0}')
             echo -e "${HL}${service}${NC}"
