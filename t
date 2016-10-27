@@ -23,6 +23,7 @@ function show_usage() {
     printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "find <task>"     "find repos with branch of given task ID"
     printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "checkout <task>" "checkout branch for task '<task>' in all repos"
     printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "delete <task>"   "delete branch for task '<task>' in all repos"
+    printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "push <task>"     "push branches for task <task> to upstream in all repos"
 }
 
 function command_branches() {
@@ -225,6 +226,43 @@ function command_reset() {
     done
 }
 
+function command_push() {
+    task="$1"
+
+    if [ -z "$task" ] ; then
+        show_usage
+        exit 1
+    fi
+
+    for service in ${SERVICES[@]} ; do
+        cd "${SERVICES_DIR}/${service}"
+        git rev-parse 2>/dev/null
+
+        if [ $? == 0 ] ; then
+            clean=$(git status | grep "nothing to commit, working directory clean")
+
+            if [ ! -z "$clean" ] ; then
+                branch_cnt=$(git branch --list *${task}* | wc -l)
+                branch=$(git branch --list *${task}* | tail -n 1 | awk '{print $NF}')
+
+                if [ ! -z "$branch" ] ; then
+                    echo -e "${HL}$service${NC}"
+
+                    if (( branch_cnt > 1 )) ; then
+                        echo -e "${ERR}${BOLD}Multiple branches exist, pushing the most recent one${NORMAL}${NC}"
+                    fi
+
+                    git push origin $branch
+                fi
+            else
+                echo -e "${ERR}${service} is not clean${NC}"
+            fi
+        fi
+
+        cd ..
+    done
+}
+
 if [ -z "$1" ] ; then
     show_usage
     exit 1
@@ -266,6 +304,9 @@ case $1 in
         ;;
     "delete")
         command_delete $2
+        ;;
+    "push")
+        command_push $2
         ;;
     *)
         show_usage
