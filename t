@@ -23,7 +23,7 @@ function show_usage() {
     printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "find <task>"     "find repos with branch of given task ID"
     printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "checkout <task>" "checkout branch for task '<task>' in all repos"
     printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "delete <task>"   "delete branch for task '<task>' in all repos"
-    printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "push <task>"     "push branches for task <task> to upstream in all repos"
+    printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "push [<task>]"   "push branches for task <task> or a current task to upstream in all repos"
 }
 
 function command_branches() {
@@ -230,8 +230,14 @@ function command_push() {
     task="$1"
 
     if [ -z "$task" ] ; then
-        show_usage
-        exit 1
+        git rev-parse 2>/dev/null
+
+        if [ $? == 0 ] ; then
+            task=$(git rev-parse --abbrev-ref HEAD)
+        else
+            show_usage
+            exit 1
+        fi
     fi
 
     for service in ${SERVICES[@]} ; do
