@@ -9,7 +9,8 @@ NC='\033[0m'     # no colour
 BOLD=$(tput bold)
 NORMAL=$(tput sgr0)
 
-SERVICES_DIR="${HOME}/dev"
+SERVICES_DIR="${HOME}/Documents/dev"
+SERVICES_DB="${HOME}/bin/t.db"
 
 function show_usage() {
     #  bash completion parses this output
@@ -24,6 +25,7 @@ function show_usage() {
     printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "checkout <task>" "checkout branch for task '<task>' in all repos"
     printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "delete <task>"   "delete branch for task '<task>' in all repos"
     printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "push [<task>]"   "push branches for task <task> or a current task to upstream in all repos"
+    printf "  - ${BOLD}%-15s${NORMAL} - %s\n" "updatedb"        "update cached services list"
 }
 
 function command_branches() {
@@ -56,7 +58,7 @@ function command_status() {
 
         if [ $? == 0 ] ; then
             branch=$(git status | awk '/On branch/ {
-                print gensub(/-([0-9]{6}|PSPD\-[0-9]+)-/, "-\033[1;32m\\1\033[0m-", "g", $NF)
+                print gensub(/-([0-9]{6}|SIG2\-[0-9]+)-/, "-\033[1;32m\\1\033[0m-", "g", $NF)
             }')
             branch_info=$(git status | awk '/Your branch/ {print $0}')
             echo -e "${HL}${service}${NC}"
@@ -269,6 +271,10 @@ function command_push() {
     done
 }
 
+function command_update_db() {
+    find . -name .git -exec dirname {} \; | grep -v vendor > $SERVICES_DB
+}
+
 if [ -z "$1" ] ; then
     show_usage
     exit 1
@@ -279,7 +285,15 @@ if [ ! -d "$SERVICES_DIR" ] ; then
     exit 1
 fi
 
-SERVICES=$(ls -1 $SERVICES_DIR | grep ^psp_)
+if [[ "$OSTYPE" == "linux-gnu"* ]] ; then
+    SERVICES=$(ls -1 $SERVICES_DIR | grep ^psp_)
+elif [[ "$OSTYPE" == "darwin"* ]] ; then
+    [ ! -f "$SERVICES_DB" ] && command_update_db
+    SERVICES=$(cat $SERVICES_DB)
+else
+    echo -e "${ERR}Services list unknown${NC}"
+    exit 1
+fi
 
 if [ ${#SERVICES[@]} == 0 ] ; then
     echo -e "${ERR}No repos found${NC}"
@@ -314,7 +328,11 @@ case $1 in
     "push")
         command_push $2
         ;;
+    "updatedb")
+        command_update_db
+        ;;
     *)
         show_usage
         ;;
 esac
+
