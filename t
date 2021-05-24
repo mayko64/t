@@ -272,7 +272,8 @@ function command_push() {
 }
 
 function command_update_db() {
-    find . -name .git -exec dirname {} \; | grep -v vendor > $SERVICES_DB
+    offset=${#SERVICES_DIR}
+    while read path ; do echo ${path:$offset} ; done < <(find $SERVICES_DIR -name .git -exec dirname {} \; | grep -v vendor) > $SERVICES_DB
 }
 
 if [ -z "$1" ] ; then
